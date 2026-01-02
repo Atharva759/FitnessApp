@@ -1,29 +1,31 @@
 package com.project.fitness.service;
 
+import com.project.fitness.dto.LoginRequest;
 import com.project.fitness.dto.RegisterRequest;
 import com.project.fitness.dto.UserResponse;
 import com.project.fitness.model.AppUser;
+import com.project.fitness.model.UserRole;
 import com.project.fitness.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.apache.catalina.User;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public UserResponse register(RegisterRequest registerRequest) {
+        UserRole role = registerRequest.getRole() != null ? registerRequest.getRole() : UserRole.USER;
         AppUser user = AppUser.builder()
                 .email(registerRequest.getEmail())
-                .password(registerRequest.getPassword())
+                .password(passwordEncoder.encode(registerRequest.getPassword()))
                 .firstName(registerRequest.getFirstName())
                 .lastName(registerRequest.getLastName())
+                .role(role)
                 .build();
         /*
         AppUser user = new AppUser(
@@ -42,7 +44,7 @@ public class UserService {
         return mapToResponse(savedUser);
     }
 
-    private UserResponse mapToResponse(AppUser savedUser) {
+    public UserResponse mapToResponse(AppUser savedUser) {
         UserResponse userResponse = new UserResponse();
         userResponse.setId(savedUser.getId());
         userResponse.setEmail(savedUser.getEmail());
@@ -54,4 +56,12 @@ public class UserService {
         return userResponse;
     }
 
+    public AppUser authenticate(LoginRequest loginRequest) {
+        AppUser user = userRepository.findByEmail(loginRequest.getEmail());
+        if(user == null) {
+            throw new RuntimeException("Invalid Credentials");
+        }
+        if(!passwordEncoder.matches(loginRequest.getPassword(),user.getPassword())) throw new RuntimeException("Invalid Credentials");
+        return user;
+    }
 }
