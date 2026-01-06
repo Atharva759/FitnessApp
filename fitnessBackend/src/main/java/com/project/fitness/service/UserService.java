@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -64,4 +66,5 @@ public class UserService {
         if(!passwordEncoder.matches(loginRequest.getPassword(),user.getPassword())) throw new RuntimeException("Invalid Credentials");
         return user;
     }
+
 }
